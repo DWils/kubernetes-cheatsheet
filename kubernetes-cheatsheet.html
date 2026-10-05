@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aide-mémoire Kubernetes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f14;
+    --surface: #101820;
+    --surface-2: #141d27;
+    --border: #202b36;
+    --text: #dce3ea;
+    --text-muted: #7c8b99;
+    --text-faint: #4d5a67;
+
+    --c-docker: #58a6ff;   /* la commande racine "kubectl" */
+    --c-sub:    #ffa657;   /* le sous-verbe (get, apply, describe...) */
+    --c-flag:   #d2a8ff;   /* les options (-n, -o, -f...) */
+    --c-value:  #7ee787;   /* placeholders / valeurs (<pod>, fichiers...) */
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --border: #dbe1e7;
+    --text: #131a22;
+    --text-muted: #5b6874;
+    --text-faint: #98a3ad;
+
+    --c-docker: #0969da;
+    --c-sub:    #bc4c00;
+    --c-flag:   #8250df;
+    --c-value:  #1a7f37;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 48px 20px 0;
+  }
+
+  header {
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h1 .prompt { color: var(--text-faint); margin-right: 10px; }
+  header p.lead {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.98rem;
+    max-width: 62ch;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 48px;
+    margin-top: 22px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.98rem;
+    color: var(--text-muted);
+  }
+  .swatch {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    flex: none;
+  }
+
+  section.group {
+    margin-top: 40px;
+  }
+  section.group h2 {
+    font-size: 0.78rem;
+    text-transform: none;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .cmd-row {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 0.74rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .copy-btn:hover {
+    color: var(--text);
+    border-color: var(--c-flag);
+  }
+  .copy-btn.copied {
+    color: var(--c-value);
+    border-color: var(--c-value);
+  }
+  .cmd-row code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .desc {
+    padding: 12px 18px 16px;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+  }
+  .desc strong { color: var(--text); font-weight: 500; }
+  .desc .note {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    color: var(--c-sub);
+    font-size: 0.87rem;
+  }
+
+  .docker  { color: var(--c-docker); font-weight: 500; }
+  .sub     { color: var(--c-sub); font-weight: 500; }
+  .flag    { color: var(--c-flag); }
+  .value   { color: var(--c-value); }
+  .plain   { color: var(--text); }
+  .pipe    { color: var(--text-faint); }
+
+  footer {
+    margin-top: 44px;
+    padding: 18px 0 30px;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 32px 14px 0; }
+    .cmd-row { padding: 12px 14px; }
+    .desc { padding: 10px 14px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="prompt">$</span>Aide-mémoire Kubernetes</h1>
+    <p class="lead">Les commandes et notions essentielles de Kubernetes, groupées par usage. Chaque partie d'une commande garde toujours la même couleur pour qu'on la repère d'un coup d'œil.</p>
+
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="background:var(--c-docker)"></span>commande racine</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-sub)"></span>sous-commande</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-flag)"></span>option / flag</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-value)"></span>valeur à remplacer</div>
+    </div>
+  </header>
+
+  <footer>Aide-mémoire personnel — à garder sous la main</footer>
+</div>
+<script>
+  function copyCmd(btn) {
+    var row = btn.closest('.cmd-row');
+    var codeEl = row.querySelector('code');
+    var text = codeEl.innerText || codeEl.textContent;
+
+    function showCopied() {
+      var original = btn.textContent;
+      btn.textContent = 'Copié !';
+      btn.classList.add('copied');
+      setTimeout(function () {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 1500);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(function () {
+        fallbackCopy(text, showCopied);
+      });
+    } else {
+      fallbackCopy(text, showCopied);
+    }
+  }
+
+  function fallbackCopy(text, onDone) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      onDone();
+    } catch (e) {
+      // silently ignore if copy truly isn't possible
+    }
+  }
+</script>
+</body>
+</html>
