@@ -208,6 +208,74 @@
     </div>
   </header>
 
+  <section class="group">
+    <h2>Qu'est-ce que Kubernetes (K8s) ?</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;"><strong>Kubernetes</strong> est un système open source qui <strong>automatise le déploiement, la mise à l'échelle et la gestion des applications conteneurisées</strong>. Là où Docker lance des conteneurs sur une machine, Kubernetes les orchestre sur un ensemble de machines (un <em>cluster</em>) : il décide où les placer, en relance automatiquement en cas de panne et en ajoute ou en retire selon la charge.</p>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">L'abréviation <strong>K8s</strong> vient du nombre de lettres entre le « K » et le « s » de Kubernetes (8). On pilote un cluster avec l'outil en ligne de commande <code>kubectl</code>.</p>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">En pratique, Kubernetes aide à <strong>lancer et gérer automatiquement de nombreux conteneurs</strong>. Exemple : une application découpée en microservices (<code>users</code>, <code>products</code>, <code>orders</code>, <code>notifications</code>), chacun dans son conteneur Docker, à faire tourner sur plusieurs serveurs. Plutôt que de choisir à la main sur quel serveur lancer chaque conteneur, on décrit à Kubernetes ce qu'on veut obtenir, et il répartit lui-même les conteneurs sur les serveurs disponibles.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Ce que Kubernetes apporte</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">• <strong>Déploiement automatique</strong> (<em>Automatic Deployment</em>) : il simplifie le déploiement sur de nombreuses machines.<br>
+• <strong>Disponibilité</strong> (<em>Availability</em>) : il s'assure que les applications tournent toujours, même en cas de panne. Si un conteneur plante (ex. <code>users</code>), Kubernetes le détecte et en relance automatiquement un nouveau.<br>
+• <strong>Mise à l'échelle</strong> (<em>Scalability</em>) : il ajoute ou retire des instances d'un service selon le trafic. Si la charge augmente sur <code>products</code>, il lance des copies supplémentaires de ce conteneur, puis les retire quand la charge baisse.<br>
+• <strong>Répartition de charge</strong> (<em>Load balancing</em>) : il répartit le trafic entrant entre les différentes instances d'un même service, pour qu'aucune ne soit surchargée.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Un peu d'histoire</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Kubernetes a été développé par <strong>Google</strong>, qui l'a rendu <strong>open source en 2014</strong>, puis confié à la <strong>Cloud Native Computing Foundation (CNCF)</strong>, qui assure aujourd'hui sa gouvernance.</p>
+  </section>
+
+  <section class="group">
+    <h2>Orchestration de conteneurs</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">L'<strong>orchestration de conteneurs</strong> est le processus qui consiste à <strong>gérer automatiquement de nombreux conteneurs</strong> : les <strong>démarrer</strong>, les <strong>arrêter</strong>, les <strong>redémarrer</strong> et les <strong>mettre à l'échelle</strong> (en ajouter ou en retirer). Kubernetes est l'outil d'orchestration le plus répandu.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Les fonctionnalités d'orchestration de Kubernetes</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">• <strong>Déploiement automatisé</strong> (<em>Automated deployment</em>) : on décrit l'état voulu (quelle image, combien d'instances), Kubernetes s'occupe de le mettre en place.<br>
+• <strong>Mise à l'échelle</strong> (<em>Scaling</em>) : augmenter ou réduire le nombre d'instances d'un service, manuellement ou selon la charge.<br>
+• <strong>Planification</strong> (<em>Scheduling</em>) : choisir sur quel serveur placer chaque conteneur, selon les ressources disponibles. Exemple : plusieurs instances de <code>users</code> réparties sur différents serveurs, <code>products</code> regroupé sur un autre.<br>
+• <strong>Auto-réparation</strong> (<em>Self-healing</em>) : relancer automatiquement un conteneur qui plante, ou le déplacer si un serveur tombe en panne.<br>
+• <strong>Répartition de charge</strong> (<em>Load balancing</em>) : répartir le trafic entre les instances d'un même service.<br>
+• <strong>Mises à jour progressives</strong> (<em>Rolling updates</em>) : passer à une nouvelle version de l'application en remplaçant les instances une par une, sans interruption de service.<br>
+• <strong>Retours arrière</strong> (<em>Rollbacks</em>) : revenir rapidement à la version précédente si la nouvelle pose problème.<br>
+• <strong>Découverte de services</strong> (<em>Service Discovery</em>) : permettre aux services de se trouver par leur nom, sans connaître les adresses IP des conteneurs, qui changent à chaque redémarrage. C'est essentiel dans une <strong>architecture microservices</strong>, où les services s'appellent en permanence : <code>orders</code> appelle simplement <code>http://users/…</code>, et Kubernetes l'oriente vers une instance disponible de <code>users</code>, quel que soit le serveur où elle tourne. Kubernetes intègre ce mécanisme nativement (via ses <em>Services</em> et son DNS interne), là où une application Spring Cloud classique utilise un annuaire dédié comme Eureka.</p>
+  </section>
+
+  <section class="group">
+    <h2>Architecture d'un cluster</h2>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Pod</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Le <strong>Pod</strong> est la <strong>plus petite unité</strong> que Kubernetes déploie et gère. Il enveloppe un conteneur (parfois plusieurs, très liés), par exemple celui d'une application Spring Boot, et lui fournit :<br>
+• un <strong>stockage partagé</strong> (volumes accessibles à tous les conteneurs du Pod) ;<br>
+• un <strong>réseau partagé</strong> : une adresse IP propre au Pod, ses conteneurs communiquent entre eux via <code>localhost</code> ;<br>
+• des <strong>métadonnées</strong> sur l'environnement dans lequel il tourne (nom, labels, namespace…).<br>
+On ne lance donc pas directement des conteneurs dans Kubernetes, mais des Pods.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Node (nœud de travail)</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Un <strong>Node</strong> est une machine (physique ou virtuelle) du cluster qui <strong>exécute les Pods</strong>. Un cluster en compte généralement plusieurs : si un Node tombe en panne, Kubernetes recrée ses Pods sur un autre Node encore disponible (auto-réparation). Chaque Node fait tourner trois composants :<br>
+• <strong><code>kubelet</code></strong> : l'agent du Node. Il démarre et arrête les conteneurs, vérifie qu'ils restent en bonne santé, leur attache le stockage dont ils ont besoin, et rend compte de ce qui tourne au Control Plane ;<br>
+• <strong><code>kube-proxy</code></strong> : gère les règles réseau du Node pour que le trafic destiné à un service atteigne le bon Pod (base de la découverte de services et de la répartition de charge) ;<br>
+• le <strong>runtime</strong> de conteneurs (ex. <code>containerd</code>) : le logiciel qui exécute réellement les conteneurs à partir des images.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Control Plane (plan de contrôle)</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Le <strong>Control Plane</strong> est un ensemble de <strong>composants de gestion</strong> qui tournent sur une ou plusieurs machines dédiées (souvent trois, pour qu'il reste disponible si l'une tombe). C'est le « cerveau » du cluster : il reçoit les demandes (par exemple via <code>kubectl</code>), décide sur quel Node placer chaque Pod, et surveille en permanence que l'état réel correspond à l'état voulu. Il communique en continu avec le <code>kubelet</code> de chaque Node.</p>
+
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Ses composants :<br>
+• <strong><code>kube-api-server</code></strong> : expose l'<strong>API Kubernetes</strong>. C'est le point d'entrée unique du cluster : <code>kubectl</code>, les autres composants du Control Plane et le <code>kubelet</code> de chaque Node passent tous par lui ;<br>
+• <strong><code>etcd</code></strong> : base de données <strong>clé-valeur hautement disponible</strong> qui stocke toutes les données du cluster (état voulu, état réel, configuration). Seul le <code>kube-api-server</code> y lit et y écrit ;<br>
+• <strong><code>kube-scheduler</code></strong> : surveille les <strong>Pods nouvellement créés</strong> qui n'ont pas encore de Node, et choisit le Node où les placer. Il tient compte des besoins en ressources (CPU, mémoire), des règles d'affinité et d'anti-affinité (placer des Pods ensemble ou au contraire les séparer), de la localité des données, des interférences entre charges de travail et des délais ;<br>
+• <strong><code>kube-controller-manager</code></strong> : exécute les <strong>contrôleurs</strong>, des boucles qui comparent en permanence l'état réel à l'état voulu et corrigent les écarts (ex. recréer un Pod disparu pour garder le bon nombre d'instances) ;<br>
+• <strong><code>cloud-controller-manager</code></strong> : fait le lien avec l'<strong>API du fournisseur cloud</strong> (AWS, Azure, GCP…), par exemple pour créer un load balancer ou gérer les machines. Absent sur un cluster local.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Du déploiement au Pod : le parcours d'une demande</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">1. Le développeur construit l'image de son application et écrit une <strong>spécification de déploiement</strong> (fichier YAML décrivant l'état voulu).<br>
+2. Il l'envoie au cluster (avec <code>kubectl</code>) : le <code>kube-api-server</code> la reçoit et l'enregistre dans <code>etcd</code>.<br>
+3. Le <code>kube-scheduler</code> repère le nouveau Pod sans Node et choisit le Node le plus adapté.<br>
+4. Le <code>kubelet</code> de ce Node, informé via le <code>kube-api-server</code>, demande au <strong>runtime</strong> de lancer le conteneur : le Pod démarre.<br>
+5. <code>kube-proxy</code> met en place les règles réseau pour que le Pod soit joignable, et le <code>kube-controller-manager</code> veille ensuite à ce que l'état voulu reste respecté.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Cluster</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Le <strong>cluster</strong> est l'ensemble formé par le <strong>Control Plane</strong> et les <strong>Nodes de travail</strong> qui exécutent les Pods. C'est à ce cluster que l'on s'adresse avec <code>kubectl</code>.</p>
+  </section>
+
   <footer>Aide-mémoire personnel — à garder sous la main</footer>
 </div>
 <script>
