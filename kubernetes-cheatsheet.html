@@ -334,6 +334,91 @@ Et même à l'intérieur du cluster, s'appuyer sur l'IP d'un Pod est fragile : l
 • <strong><code>NodePort</code></strong> : accès <strong>externe via un port des Nodes</strong>. Kubernetes ouvre le même port (par défaut entre <code>30000</code> et <code>32767</code>) sur chaque Node du cluster ; une application cliente joint le Service à l'adresse <code>&lt;IP d'un Node&gt;:&lt;NodePort&gt;</code>, et la requête est transmise aux Pods. Le port est le même sur tous les Nodes (ex. <code>192.168.0.1:30080</code> et <code>192.168.0.2:30080</code>), et la requête peut atteindre un Pod situé sur <strong>n'importe quel Node</strong>, pas seulement celui qui l'a reçue.<br>• <strong><code>LoadBalancer</code></strong> : accès <strong>externe via un répartiteur de charge du fournisseur cloud</strong>. Sur un cluster cloud (AWS, Azure, GCP…), Kubernetes demande automatiquement au fournisseur, via le <code>cloud-controller-manager</code>, de créer un load balancer avec une <strong>adresse IP publique</strong> ; les clients utilisent cette adresse unique, et le load balancer répartit le trafic entre les Nodes du cluster. C'est le moyen le plus courant d'exposer une application en production.<br>• <strong><code>ExternalName</code></strong> : <strong>alias DNS vers un service externe</strong> au cluster. Le Service ne pointe vers aucun Pod : son nom renvoie simplement vers un nom de domaine extérieur (ex. une base de données hébergée dans le cloud). Exemple : un Service <code>ExternalName</code> nommé <code>ma-base-db</code> renvoie vers <code>ma-base.rds.amazonaws.com</code> (base AWS RDS) ; l'application appelle simplement <code>ma-base-db</code>, comme n'importe quel service interne, et le DNS du cluster la redirige vers l'adresse externe ; si l'adresse externe change, seul le Service est à modifier, pas le code ni la configuration des applications.</p>
   </section>
 
+  <section class="group">
+    <h2>Installer un cluster local</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Pour s'entraîner, <strong>Docker Desktop</strong> peut créer un cluster Kubernetes sur sa propre machine : menu <strong>Kubernetes</strong> → <strong>Create Kubernetes Cluster</strong>. Deux types de cluster sont proposés :<br>
+• <strong>Kubeadm</strong> : crée un cluster à <strong>un seul Node</strong> avec l'outil officiel <code>kubeadm</code>. Le plus simple pour débuter.<br>
+• <strong>kind</strong> (<em>Kubernetes in Docker</em>) : crée un cluster contenant <strong>un ou plusieurs Nodes</strong>, chacun étant un conteneur Docker. Le curseur <em>Node(s)</em> permet d'en choisir le nombre (jusqu'à 10), pratique pour observer la répartition des Pods sur plusieurs Nodes. Nécessite d'activer le <em>containerd image store</em> dans les paramètres de Docker Desktop.<br>
+On peut aussi choisir la <strong>version de Kubernetes</strong>. Changer le nombre de Nodes ou la version <strong>réinitialise le cluster</strong> : tout ce qui y était déployé est supprimé. L'option <em>Show system containers</em> affiche les conteneurs internes de Kubernetes dans les commandes Docker (utile seulement pour l'exploration). Docker Desktop installe aussi <code>kubectl</code> et le configure automatiquement pour ce cluster.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">get</span> <span class="sub">nodes</span></code>
+      </div>
+      <div class="desc">Vérification une fois le cluster créé : liste les Nodes du cluster avec leur statut. Un Node prêt affiche <code>Ready</code> ; avec un cluster à un seul Node, une seule ligne apparaît.
+        <span class="note">Conseil : <code>kubectl config current-context</code> indique sur quel cluster pointe <code>kubectl</code> (ex. <code>docker-desktop</code>) : utile si tu travailles avec plusieurs clusters.</span>
+      </div>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Une fois le cluster lancé, l'écran <strong>Kubernetes</strong> de Docker Desktop sert de tableau de bord : état du cluster (<code>Active</code>), type (<code>kind</code> ou <code>kubeadm</code>), nombre de Nodes et version, puis la liste des <strong>Deployments</strong>, <strong>Pods</strong>, <strong>Nodes</strong>, <strong>Services</strong>, <strong>Ingresses</strong> (règles d'accès HTTP depuis l'extérieur) et <strong>ConfigMaps / Secrets</strong> (configuration et données sensibles des applications) du namespace choisi (<code>default</code> par défaut). Les boutons <em>Stop</em> et <em>Edit cluster</em> arrêtent ou modifient le cluster.<br>Sur un cluster neuf, on y voit déjà deux éléments créés automatiquement : le Node <code>desktop-control-plane</code> (statut <code>Ready</code>), qui joue à la fois le rôle de Control Plane et de Node de travail dans un cluster à un seul Node ; et le Service <code>kubernetes</code> (Cluster IP <code>10.96.0.1</code>, port <code>443/TCP</code>), qui donne accès à l'API Kubernetes (<code>kube-api-server</code>) depuis l'intérieur du cluster. La ConfigMap <code>kube-root-ca.crt</code>, présente elle aussi d'office, contient le certificat racine du cluster, qui permet aux Pods de vérifier qu'ils parlent bien au vrai <code>kube-api-server</code>. Il ne faut pas supprimer ces éléments.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">run</span> <span class="value">&lt;nom-du-pod&gt;</span> <span class="flag">--image</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Crée et lance <strong>un seul Pod</strong>, directement, sans Deployment. Exemple proposé par Docker Desktop : <code>kubectl run nginx --image nginx</code> lance un Pod <code>nginx</code> à partir de l'image officielle du serveur web nginx.
+        <span class="note">Conseil : pratique pour un test rapide, mais un Pod lancé ainsi n'est <strong>pas recréé</strong> s'il disparaît, et ne peut ni être mis à l'échelle ni mis à jour progressivement. Pour une vraie application, préfère <code>kubectl create deployment</code> (ex. <code>kubectl create deployment my-app --image=nginx</code>).</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Préparer l'image de l'application</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Kubernetes ne construit pas d'image : il lance des conteneurs à partir d'images existantes. Avant de déployer une application Spring Boot, il faut donc d'abord <strong>construire son image Docker</strong>, puis la rendre accessible au cluster.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="pipe"># Stage 1 : dépendances</span><br><span class="flag">FROM</span> <span class="value">${BASE_JDK_IMAGE}</span> <span class="flag">AS</span> <span class="value">dependencies</span><br><span class="flag">WORKDIR</span> <span class="value">/build</span><br><span class="flag">COPY</span> <span class="value">pom.xml .</span><br><span class="flag">RUN</span> <span class="value">mvn dependency:go-offline</span><br><br><span class="pipe"># Stage 2 : build</span><br><span class="flag">FROM</span> <span class="value">dependencies</span> <span class="flag">AS</span> <span class="value">builder</span><br><span class="flag">COPY</span> <span class="value">src ./src</span><br><span class="flag">RUN</span> <span class="value">mvn clean package</span><br><br><span class="pipe"># Stage 3 : runtime</span><br><span class="flag">FROM</span> <span class="value">${BASE_JRE_IMAGE}</span> <span class="flag">AS</span> <span class="value">runtime</span><br><span class="pipe"># … copie du .jar depuis builder, puis lancement de l'application</span></code>
+      </div>
+      <div class="desc">Un <strong>Dockerfile multi-stage</strong> découpe la construction en étapes (<em>stages</em>), chacune partant d'une image (<code>FROM … AS &lt;nom&gt;</code>) et pouvant réutiliser la précédente :<br>• <code>dependencies</code> : copie seulement le <code>pom.xml</code> et télécharge les dépendances Maven (<code>mvn dependency:go-offline</code>) ;<br>• <code>builder</code> : repart de <code>dependencies</code>, copie le code source et compile l'application (<code>mvn clean package</code>), ce qui produit le <code>.jar</code> ;<br>• <code>runtime</code> : part d'une image <strong>JRE</strong> légère (sans Maven ni JDK), y copie seulement le <code>.jar</code> et lance l'application.<br>Seule la dernière étape forme l'image finale, beaucoup plus petite qu'une image contenant tous les outils de build.
+        <span class="note">Conseil : copier le <code>pom.xml</code> avant le code source permet à Docker de garder les dépendances en cache : tant que le <code>pom.xml</code> ne change pas, une modification du code ne relance pas leur téléchargement. <code>${BASE_JDK_IMAGE}</code> et <code>${BASE_JRE_IMAGE}</code> sont des arguments de build (<code>ARG</code>) qui permettent de changer l'image de base sans modifier le Dockerfile.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">build</span> <span class="flag">-f</span> <span class="value">Dockerfile-multi-stage</span> <span class="flag">-t</span> <span class="value">mon-service:1.0.0</span> <span class="plain">.</span></code>
+      </div>
+      <div class="desc">Construit l'image à partir du Dockerfile multi-stage (<code>-f</code>), la nomme <code>mon-service:1.0.0</code> (<code>-t</code>), avec le dossier courant (<code>.</code>) comme contexte de build. À lancer depuis la racine du projet, là où se trouvent le <code>pom.xml</code> et le dossier <code>src</code>.
+        <span class="note">Conseil : avec le cluster local de Docker Desktop, une image construite localement est en général utilisable directement. Pour un cluster distant, il faut d'abord la publier sur un registre (ex. <code>docker push</code> vers Docker Hub).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">images</span></code>
+      </div>
+      <div class="desc">Vérification : l'image construite apparaît dans la liste (ex. <code>mon-service:1.0.0</code>), avec son ID et sa taille. Avec un cluster <strong>kind</strong> de Docker Desktop, on y voit aussi les images du cluster lui-même : <code>kindest/node</code> (l'image des Nodes kind), <code>desktop-containerd-registry-mirror</code> et <code>desktop-cloud-provider-kind</code>. La colonne <em>EXTRA</em> les marque <code>U</code> (<em>In Use</em>) car elles sont utilisées par des conteneurs en cours d'exécution.
+        <span class="note">Conseil : ne supprime pas ces images de Docker Desktop tant que le cluster est actif (attention à <code>docker image prune -a</code> ou <code>docker system prune -a</code>).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="value">mon-service:1.0.0</span></code>
+      </div>
+      <div class="desc">Test de l'image <strong>avant</strong> de la déployer dans Kubernetes : la lance dans un simple conteneur Docker, avec le port <code>8082</code> publié sur la machine. Si la bannière Spring Boot s'affiche et que l'application démarre sans erreur, l'image fonctionne ; tout problème découvert ici serait aussi survenu dans le cluster, mais y aurait été plus difficile à diagnostiquer.
+        <span class="note">Conseil : une fois les tests terminés, arrête et supprime ce conteneur (<code>docker rm -f mon-service</code>) avant de passer à Kubernetes, pour libérer le port <code>8082</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="plain">curl</span> <span class="flag">-X</span> <span class="value">POST</span> <span class="value">http://localhost:8082/users</span> <span class="pipe">\</span><br>  <span class="flag">-H</span> <span class="value">'Content-Type: application/json'</span> <span class="pipe">\</span><br>  <span class="flag">-d</span> <span class="value">'{"firstName":"Jean","lastName":"Dupont","email":"jean.dupont@example.com","password":"motdepasse123"}'</span></code>
+      </div>
+      <div class="desc">Vérification fonctionnelle du conteneur de test : envoie une requête <code>POST</code> à l'application sur le port publié pour créer un utilisateur. Une réponse <code>200 OK</code> avec un JSON contenant un <code>userId</code> généré confirme que l'application répond correctement. On peut faire la même requête avec Postman (méthode <code>POST</code>, onglet <em>Body</em> → <em>raw</em> → <em>JSON</em>).
+        <span class="note">Conseil : garde cette requête sous la main, elle servira à vérifier de la même façon l'application une fois déployée dans Kubernetes.</span>
+      </div>
+    </div>
+  </section>
+
   <footer>Aide-mémoire personnel — à garder sous la main</footer>
 </div>
 <script>
