@@ -417,6 +417,16 @@ On peut aussi choisir la <strong>version de Kubernetes</strong>. Changer le nomb
         <span class="note">Conseil : garde cette requête sous la main, elle servira à vérifier de la même façon l'application une fois déployée dans Kubernetes.</span>
       </div>
     </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">images</span>                                               <span class="pipe"># 1. repère l'ID de l'image</span><br><span class="docker">docker</span> <span class="sub">tag</span> <span class="value">d0ff1769fcd3</span> <span class="value">mon-compte/mon-service:1.0.0</span>       <span class="pipe"># 2. la nomme au format Docker Hub</span><br><span class="docker">docker</span> <span class="sub">login</span> <span class="flag">--username</span><span class="value">=mon-compte</span>                      <span class="pipe"># 3. se connecte à Docker Hub</span><br><span class="docker">docker</span> <span class="sub">push</span> <span class="value">mon-compte/mon-service:1.0.0</span>                    <span class="pipe"># 4. publie l'image</span></code>
+      </div>
+      <div class="desc">Publication de l'image sur <strong>Docker Hub</strong>, pour qu'un cluster puisse la télécharger : <code>docker tag</code> donne à l'image locale (désignée par son ID) un nom au format <code>&lt;compte&gt;/&lt;nom&gt;:&lt;tag&gt;</code>, <code>docker login</code> ouvre la session (le mot de passe est demandé ensuite, <code>Login Succeeded</code> confirme), puis <code>docker push</code> envoie l'image. C'est ce nom complet (ex. <code>mon-compte/mon-service:1.0.0</code>) qu'on indique ensuite dans <code>--image</code> du Deployment.
+        <span class="note">Conseil : comme le suggère Docker, utilise un <strong>jeton d'accès personnel</strong> (<em>Personal Access Token</em>, créé dans les paramètres du compte Docker Hub) à la place du mot de passe. La procédure est détaillée dans l'aide-mémoire Docker (section « Build et gestion des images »).</span>
+      </div>
+    </div>
   </section>
 
   <footer>Aide-mémoire personnel — à garder sous la main</footer>
