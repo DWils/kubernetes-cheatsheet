@@ -277,6 +277,13 @@ On ne lance donc pas directement des conteneurs dans Kubernetes, mais des Pods.<
   </section>
 
   <section class="group">
+    <h2>kubectl, l'outil pour piloter Kubernetes</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;"><code>kubectl</code> est l'<strong>outil en ligne de commande</strong> qui permet de communiquer avec un cluster Kubernetes : il envoie nos commandes à l'<strong>API Kubernetes</strong> (le <code>kube-api-server</code> du Control Plane), et Kubernetes réalise les actions demandées. La documentation officielle le décrit comme un « couteau suisse » : selon la commande, il permet de <strong>créer</strong> des ressources, les <strong>mettre à jour</strong>, les <strong>supprimer</strong>, <strong>afficher</strong> ce qui tourne dans le cluster et <strong>déboguer</strong> quand quelque chose ne va pas.<br>
+Exemples : <code>kubectl get pods</code> demande à l'API « montre-moi tous les Pods en cours d'exécution » ; <code>kubectl create deployment …</code> lui demande « crée ce Deployment pour moi ».<br>
+Il n'y a pas de prononciation officielle : « kube C-T-L », « kube control » ou même « kube cuddle » sont tous courants.</p>
+  </section>
+
+  <section class="group">
     <h2>Deployment</h2>
     <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Un <strong>Deployment</strong> décrit l'<strong>état voulu</strong> d'une application : quelle image lancer et combien de Pods identiques (<em>réplicas</em>) doivent tourner. Kubernetes crée ces Pods, les répartit sur les Nodes, et veille en permanence à ce que leur nombre reste celui demandé. Il couvre tout le cycle de vie de l'application :<br>• <strong>Déployer</strong> (<em>Deploy</em>) : créer les Pods à partir de l'image indiquée ;<br>• <strong>Mettre à l'échelle</strong> (<em>Scale</em>) : augmenter ou réduire le nombre de réplicas ;<br>• <strong>Mettre à jour</strong> (<em>Update</em>) : passer à une nouvelle version de l'image en remplaçant les Pods <strong>progressivement</strong>, quelques-uns à la fois, pour que l'application reste disponible pendant toute la mise à jour (<em>rolling update</em>) ;<br>• <strong>Revenir en arrière</strong> (<em>Rollback</em>) : si la nouvelle version pose problème, revenir à la version précédente, elle aussi de façon progressive ;<br>• <strong>Auto-réparation</strong> (<em>Self-healing</em>) : si un Pod plante ou disparaît (ex. son Node tombe en panne), le Deployment le <strong>remplace automatiquement</strong> par un nouveau Pod, pour toujours garder le nombre de réplicas demandé ;<br>• <strong>Suivi de l'état</strong> (<em>Status check</em>) : le Deployment indique en permanence où en est l'application : combien de réplicas sont prêts et disponibles, et si une mise à jour est en cours, terminée ou bloquée.</p>
 
@@ -286,7 +293,7 @@ On ne lance donc pas directement des conteneurs dans Kubernetes, mais des Pods.<
         <code><span class="docker">kubectl</span> <span class="sub">create</span> <span class="sub">deployment</span> <span class="value">&lt;nom&gt;</span> <span class="pipe">\</span><br>  <span class="flag">--image</span><span class="value">=&lt;image&gt;</span> <span class="pipe">\</span><br>  <span class="flag">--port</span><span class="value">=&lt;port&gt;</span> <span class="pipe">\</span><br>  <span class="flag">--replicas</span><span class="value">=&lt;nombre&gt;</span></code>
       </div>
       <div class="desc">Crée un <strong>Deployment</strong> : <code>--image</code> indique l'image de conteneur à lancer, <code>--port</code> le port sur lequel l'application écoute dans le conteneur, et <code>--replicas</code> le <strong>nombre de Pods identiques</strong> à faire tourner en permanence.
-        <span class="note">Conseil : sans <code>--replicas</code>, un seul Pod est créé. Le <code>\</code> en fin de ligne permet d'écrire la commande sur plusieurs lignes (Linux, macOS, Git Bash).</span>
+        <span class="note">Conseil : sans <code>--replicas</code>, un seul Pod est créé, et sans <code>--port</code> aucun port n'est déclaré. Les options acceptent les deux écritures <code>--image=&lt;image&gt;</code> et <code>--image &lt;image&gt;</code>. La forme minimale suffit donc : <code>kubectl create deployment mon-service-deployment --image mon-compte/mon-service:1.0.0</code>. Le <code>\</code> en fin de ligne permet d'écrire la commande sur plusieurs lignes (Linux, macOS, Git Bash).</span>
       </div>
     </div>
 
@@ -295,7 +302,46 @@ On ne lance donc pas directement des conteneurs dans Kubernetes, mais des Pods.<
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">kubectl</span> <span class="sub">create</span> <span class="sub">deployment</span> <span class="value">mon-service-deployment</span> <span class="pipe">\</span><br>  <span class="flag">--image</span><span class="value">=mon-compte/mon-service:2.0.1</span> <span class="pipe">\</span><br>  <span class="flag">--port</span><span class="value">=8082</span> <span class="pipe">\</span><br>  <span class="flag">--replicas</span><span class="value">=3</span></code>
       </div>
-      <div class="desc">Exemple : déploie l'application à partir de son image publiée sur Docker Hub, qui écoute sur le port <code>8082</code>, en <strong>3 exemplaires</strong>. Le <code>kube-scheduler</code> répartit les 3 Pods sur les Nodes disponibles, et Kubernetes en recrée automatiquement un si l'un d'eux disparaît.</div>
+      <div class="desc">Exemple : déploie l'application à partir de son image publiée sur Docker Hub, qui écoute sur le port <code>8082</code>, en <strong>3 exemplaires</strong>. Le <code>kube-scheduler</code> répartit les 3 Pods sur les Nodes disponibles, et Kubernetes en recrée automatiquement un si l'un d'eux disparaît. Kubernetes confirme la création par <code>deployment.apps/mon-service-deployment created</code> (<code>apps</code> est le groupe d'API des Deployments, celui de <code>apiVersion: apps/v1</code>).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">get</span> <span class="sub">deployments</span></code>
+      </div>
+      <div class="desc">Liste les Deployments du namespace courant et leur état :<br>
+• <code>READY</code> : Pods prêts sur Pods demandés (ex. <code>3/3</code> : les 3 réplicas sont prêts) ;<br>
+• <code>UP-TO-DATE</code> : Pods qui utilisent déjà la dernière version du Deployment (utile pendant une mise à jour progressive) ;<br>
+• <code>AVAILABLE</code> : Pods disponibles pour recevoir du trafic ;<br>
+• <code>AGE</code> : temps écoulé depuis la création.<br>
+Juste après la création, <code>READY</code> peut afficher <code>0/3</code> le temps que les images soient téléchargées et que les applications démarrent.
+        <span class="note">Conseil : <code>kubectl get deploy</code> est un raccourci équivalent, et <code>-w</code> (<em>watch</em>) affiche les changements en direct jusqu'à <code>Ctrl+C</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">get</span> <span class="sub">pods</span></code>
+      </div>
+      <div class="desc">Liste les Pods du namespace courant. Les Pods créés par un Deployment portent un nom de la forme <code>&lt;deployment&gt;-&lt;identifiant&gt;-&lt;suffixe&gt;</code> (ex. <code>mon-service-deployment-6989646477-5tbp4</code>) : l'identifiant du milieu est commun à tous les Pods d'une même version du Deployment, le suffixe est propre à chaque Pod. Les colonnes :<br>
+• <code>READY</code> : conteneurs prêts sur conteneurs du Pod (ex. <code>1/1</code>) ;<br>
+• <code>STATUS</code> : état du Pod (<code>Running</code> = en cours d'exécution ; on peut aussi voir <code>Pending</code>, <code>ContainerCreating</code>, <code>CrashLoopBackOff</code>, <code>ImagePullBackOff</code>…) ;<br>
+• <code>RESTARTS</code> : nombre de redémarrages du conteneur ; une valeur qui augmente signale une application qui plante ;<br>
+• <code>AGE</code> : temps écoulé depuis la création du Pod.
+        <span class="note">Conseil : <code>kubectl get pods -o wide</code> ajoute l'IP de chaque Pod et le Node sur lequel il tourne. Un statut <code>ImagePullBackOff</code> indique en général un nom d'image erroné ou une image introuvable sur le registre.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">describe</span> <span class="sub">deployment</span> <span class="value">&lt;deployment&gt;</span></code>
+      </div>
+      <div class="desc">Affiche le <strong>détail complet</strong> d'un Deployment, sous une forme lisible : labels et sélecteur, nombre de réplicas (voulus, à jour, disponibles), stratégie de mise à jour, modèle de Pod (image, ports, variables d'environnement) et, en bas, les <strong>événements</strong> récents (ex. création ou mise à l'échelle des réplicas). Exemple : <code>kubectl describe deployment mon-service-deployment</code>.
+        <span class="note">Conseil : <code>describe</code> fonctionne sur tous les objets (<code>kubectl describe pod &lt;pod&gt;</code>, <code>kubectl describe service &lt;service&gt;</code>…). C'est le premier réflexe quand quelque chose ne marche pas : la section <em>Events</em> indique souvent directement la cause (image introuvable, ressources insuffisantes…).</span>
+      </div>
     </div>
 
     <div class="card">
@@ -332,6 +378,44 @@ Et même à l'intérieur du cluster, s'appuyer sur l'IP d'un Pod est fragile : l
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Les types de Services</h3>
     <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">• <strong><code>ClusterIP</code></strong> : accès <strong>interne au cluster uniquement</strong>. Le Service reçoit une IP virtuelle et un nom DNS joignables seulement depuis les Pods du cluster. C'est le type par défaut, utilisé pour la communication entre microservices (ex. frontend → backend).<br>
 • <strong><code>NodePort</code></strong> : accès <strong>externe via un port des Nodes</strong>. Kubernetes ouvre le même port (par défaut entre <code>30000</code> et <code>32767</code>) sur chaque Node du cluster ; une application cliente joint le Service à l'adresse <code>&lt;IP d'un Node&gt;:&lt;NodePort&gt;</code>, et la requête est transmise aux Pods. Le port est le même sur tous les Nodes (ex. <code>192.168.0.1:30080</code> et <code>192.168.0.2:30080</code>), et la requête peut atteindre un Pod situé sur <strong>n'importe quel Node</strong>, pas seulement celui qui l'a reçue.<br>• <strong><code>LoadBalancer</code></strong> : accès <strong>externe via un répartiteur de charge du fournisseur cloud</strong>. Sur un cluster cloud (AWS, Azure, GCP…), Kubernetes demande automatiquement au fournisseur, via le <code>cloud-controller-manager</code>, de créer un load balancer avec une <strong>adresse IP publique</strong> ; les clients utilisent cette adresse unique, et le load balancer répartit le trafic entre les Nodes du cluster. C'est le moyen le plus courant d'exposer une application en production.<br>• <strong><code>ExternalName</code></strong> : <strong>alias DNS vers un service externe</strong> au cluster. Le Service ne pointe vers aucun Pod : son nom renvoie simplement vers un nom de domaine extérieur (ex. une base de données hébergée dans le cloud). Exemple : un Service <code>ExternalName</code> nommé <code>ma-base-db</code> renvoie vers <code>ma-base.rds.amazonaws.com</code> (base AWS RDS) ; l'application appelle simplement <code>ma-base-db</code>, comme n'importe quel service interne, et le DNS du cluster la redirige vers l'adresse externe ; si l'adresse externe change, seul le Service est à modifier, pas le code ni la configuration des applications.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Créer un Service en ligne de commande</h3>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">expose</span> <span class="sub">deployment</span> <span class="value">&lt;deployment&gt;</span> <span class="flag">--type</span><span class="value">=&lt;type&gt;</span></code>
+      </div>
+      <div class="desc">Crée un <strong>Service</strong> devant les Pods d'un Deployment, en mode impératif. Le Service reprend automatiquement le sélecteur du Deployment, et donc cible ses Pods. <code>--type</code> choisit le type de Service :<br>• <code>ClusterIP</code> (par défaut) : accès interne au cluster uniquement ;<br>• <code>NodePort</code> : accès externe via <code>&lt;IP du Node&gt;:&lt;NodePort&gt;</code>, le port étant attribué automatiquement entre <code>30000</code> et <code>32767</code> ;<br>• <code>LoadBalancer</code> : accès externe via un load balancer (avec Docker Desktop, il est joignable sur <code>localhost</code>).
+        <span class="note">Conseil : sans <code>--port</code>, le Service reprend le port déclaré dans le Deployment (<code>--port=8082</code> à sa création) ; si aucun port n'a été déclaré, <code>expose</code> échoue et il faut le préciser.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">expose</span> <span class="sub">deployment</span> <span class="value">mon-service-deployment</span> <span class="pipe">\</span><br>  <span class="flag">--type</span><span class="value">=LoadBalancer</span> <span class="pipe">\</span><br>  <span class="flag">--port</span><span class="value">=8082</span> <span class="pipe">\</span><br>  <span class="flag">--target-port</span><span class="value">=8082</span> <span class="pipe">\</span><br>  <span class="flag">--name</span> <span class="value">mon-service-service</span></code>
+      </div>
+      <div class="desc">Exemple complet :<br>• <code>--port</code> : le port <strong>du Service</strong>, celui que les clients appellent (on peut en choisir un différent si besoin) ;<br>• <code>--target-port</code> : le port <strong>du conteneur</strong> vers lequel le trafic est transmis, celui sur lequel l'application écoute (<code>containerPort</code>, ou <code>server.port</code> pour Spring Boot) ;<br>• <code>--name</code> : le nom du Service (sinon il prend celui du Deployment).<br>Kubernetes confirme par <code>service/mon-service-service exposed</code>.
+        <span class="note">Conseil : comme pour Docker (<code>-p hôte:conteneur</code>), <code>--port</code> et <code>--target-port</code> peuvent différer, ex. <code>--port=80 --target-port=8082</code> pour appeler l'application sur le port 80.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">get</span> <span class="sub">services</span></code>
+      </div>
+      <div class="desc">Liste les Services du namespace courant. Les colonnes :<br>
+• <code>TYPE</code> : <code>ClusterIP</code>, <code>NodePort</code>, <code>LoadBalancer</code>… ;<br>
+• <code>CLUSTER-IP</code> : l'IP interne stable du Service, joignable depuis les Pods (ex. <code>10.96.241.158</code>) ;<br>
+• <code>EXTERNAL-IP</code> : l'adresse externe attribuée par le load balancer (ex. <code>172.18.0.5</code>), <code>&lt;none&gt;</code> pour un <code>ClusterIP</code>, ou <code>&lt;pending&gt;</code> tant qu'elle n'est pas encore attribuée ;<br>
+• <code>PORT(S)</code> : le port du Service et, pour <code>NodePort</code> et <code>LoadBalancer</code>, le NodePort ouvert sur les Nodes (ex. <code>8082:31270/TCP</code> : port <code>8082</code> du Service, port <code>31270</code> sur chaque Node) ;<br>
+• <code>AGE</code> : temps écoulé depuis la création.<br>
+Le Service <code>kubernetes</code> (<code>10.96.0.1</code>, <code>443/TCP</code>) existe d'office : c'est l'accès à l'API du cluster.
+        <span class="note">Conseil : un Service <code>LoadBalancer</code> crée aussi un NodePort, car le load balancer s'appuie sur lui pour atteindre les Nodes. Avec Docker Desktop, l'<code>EXTERNAL-IP</code> (ex. <code>172.18.0.5</code>) est une adresse <strong>interne à la machine virtuelle de Docker Desktop</strong>, pas toujours joignable directement depuis ta machine ; l'application est en général joignable sur <code>http://localhost:8082</code> : c'est là qu'il faut relancer la requête de test (<code>curl</code> ou Postman) préparée plus haut. Une réponse <code>200 OK</code> avec un <code>userId</code> généré confirme que toute la chaîne fonctionne : requête → Service <code>LoadBalancer</code> → l'un des 3 Pods du Deployment. <code>kubectl get svc</code> est un raccourci équivalent.</span>
+      </div>
+    </div>
   </section>
 
   <section class="group">
@@ -424,9 +508,84 @@ On peut aussi choisir la <strong>version de Kubernetes</strong>. Changer le nomb
         <code><span class="docker">docker</span> <span class="sub">images</span>                                               <span class="pipe"># 1. repère l'ID de l'image</span><br><span class="docker">docker</span> <span class="sub">tag</span> <span class="value">d0ff1769fcd3</span> <span class="value">mon-compte/mon-service:1.0.0</span>       <span class="pipe"># 2. la nomme au format Docker Hub</span><br><span class="docker">docker</span> <span class="sub">login</span> <span class="flag">--username</span><span class="value">=mon-compte</span>                      <span class="pipe"># 3. se connecte à Docker Hub</span><br><span class="docker">docker</span> <span class="sub">push</span> <span class="value">mon-compte/mon-service:1.0.0</span>                    <span class="pipe"># 4. publie l'image</span></code>
       </div>
       <div class="desc">Publication de l'image sur <strong>Docker Hub</strong>, pour qu'un cluster puisse la télécharger : <code>docker tag</code> donne à l'image locale (désignée par son ID) un nom au format <code>&lt;compte&gt;/&lt;nom&gt;:&lt;tag&gt;</code>, <code>docker login</code> ouvre la session (le mot de passe est demandé ensuite, <code>Login Succeeded</code> confirme), puis <code>docker push</code> envoie l'image. C'est ce nom complet (ex. <code>mon-compte/mon-service:1.0.0</code>) qu'on indique ensuite dans <code>--image</code> du Deployment.
-        <span class="note">Conseil : comme le suggère Docker, utilise un <strong>jeton d'accès personnel</strong> (<em>Personal Access Token</em>, créé dans les paramètres du compte Docker Hub) à la place du mot de passe. La procédure est détaillée dans l'aide-mémoire Docker (section « Build et gestion des images »).</span>
+        <span class="note">Conseil : comme le suggère Docker, utilise un <strong>jeton d'accès personnel</strong> (<em>Personal Access Token</em>, créé dans les paramètres du compte Docker Hub) à la place du mot de passe. La procédure est détaillée dans l'aide-mémoire Docker (section « Build et gestion des images »). Un push réussi se termine par une ligne <code>&lt;tag&gt;: digest: sha256:… size: …</code>. Les couches déjà présentes sur Docker Hub ne sont pas renvoyées : <code>Mounted from &lt;autre dépôt&gt;</code> indique une couche réutilisée depuis un autre dépôt du même compte, <code>Pushed</code> une couche réellement envoyée. Pour une nouvelle version, on reconstruit, on tague avec un nouveau numéro (ex. <code>1.0.1</code>) et on pousse : c'est ce tag qui servira à mettre à jour le Deployment.</span>
       </div>
     </div>
+  </section>
+
+  <section class="group">
+    <h2>Les objets de l'API Kubernetes</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Tout ce qu'on crée dans un cluster est un <strong>objet de l'API Kubernetes</strong>, décrit par un <code>kind</code> dans un manifeste YAML et géré via le <code>kube-api-server</code>. Les principaux :<br>
+• <strong><code>Pod</code></strong> : fait tourner le conteneur de l'application ;<br>
+• <strong><code>Deployment</code></strong> : gère les réplicas d'un Pod (nombre, mises à jour, retours arrière, auto-réparation) ;<br>
+• <strong><code>Service</code></strong> : donne un accès réseau stable aux Pods ;<br>
+• <strong><code>ConfigMap</code></strong> : stocke des données de configuration <strong>non confidentielles</strong> sous forme de paires clé-valeur (ex. profil Spring actif, URL d'un autre service), injectées dans les Pods comme variables d'environnement ou fichiers ;<br>
+• <strong><code>Secret</code></strong> : stocke des informations <strong>sensibles</strong> comme des mots de passe ou des clés d'API, pour ne pas les écrire en clair dans l'image ni dans le manifeste du Deployment.<br>
+<code>ConfigMap</code> et <code>Secret</code> jouent le même rôle que le fichier <code>.env</code> et les <em>secrets</em> de Docker Compose : séparer la configuration du code, pour utiliser la même image dans tous les environnements.</p>
+  </section>
+
+  <section class="group">
+    <h2>Approche impérative ou déclarative</h2>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Approche impérative</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">On donne à Kubernetes des <strong>ordres directs</strong>, une commande <code>kubectl</code> par action : créer un Deployment, changer son image, modifier son nombre de réplicas…</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">set</span> <span class="sub">image</span> <span class="value">deployment/&lt;deployment&gt;</span> <span class="value">&lt;conteneur&gt;=&lt;nouvelle_image&gt;</span></code>
+      </div>
+      <div class="desc">Change l'image d'un conteneur d'un Deployment, ce qui déclenche une <strong>mise à jour progressive</strong> (<em>rolling update</em>) : les Pods sont remplacés quelques-uns à la fois par des Pods utilisant la nouvelle image. Kubernetes confirme par <code>deployment.apps/&lt;deployment&gt; image updated</code> ; <code>kubectl rollout status deployment/&lt;deployment&gt;</code> suit ensuite la progression jusqu'à la fin du remplacement. Exemple : <code>kubectl set image deployment/mon-service mon-service=mon-service:2.0.2</code>.
+        <span class="note">Conseil : le nom avant le <code>=</code> est celui du <strong>conteneur</strong> dans le Pod, pas celui du Deployment. Avec <code>kubectl create deployment</code>, le conteneur prend le nom de l'<strong>image</strong>, sans le compte ni le tag : pour <code>--image mon-compte/mon-service-demo:1.0.0</code>, il s'appelle <code>mon-service-demo</code>. Exemple : <code>kubectl set image deployment/mon-service-deployment mon-service-demo=mon-compte/mon-service-demo:1.0.1</code>. Pour retrouver le nom du conteneur : <code>kubectl describe deployment &lt;deployment&gt;</code> (rubrique <em>Containers</em>). Le type d'objet est obligatoire avant le nom, sous la forme <code>deployment/&lt;nom&gt;</code> ou <code>deployment &lt;nom&gt;</code> : sans lui, <code>kubectl</code> prend le nom du Deployment pour un type de ressource et répond par une erreur (<code>the server doesn't have a resource type …</code>).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">rollout</span> <span class="sub">history</span> <span class="value">deployment/&lt;deployment&gt;</span></code>
+      </div>
+      <div class="desc">Affiche l'<strong>historique des révisions</strong> d'un Deployment : chaque changement du modèle de Pod (ex. nouvelle image avec <code>set image</code>) crée une nouvelle révision numérotée (<code>1</code> = création, <code>2</code> = première mise à jour…). Ce sont ces révisions qui permettent de revenir en arrière.
+        <span class="note">Conseil : la colonne <code>CHANGE-CAUSE</code> affiche <code>&lt;none&gt;</code> par défaut. Pour y décrire chaque changement, ajoute une annotation juste après la modification : <code>kubectl annotate deployment/&lt;deployment&gt; kubernetes.io/change-cause="passage en 1.0.1"</code>. <code>kubectl rollout history deployment/&lt;deployment&gt; --revision=2</code> affiche le détail d'une révision (image, ports…).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">scale</span> <span class="sub">deployment</span> <span class="value">&lt;deployment&gt;</span> <span class="flag">--replicas</span><span class="value">=&lt;nombre&gt;</span></code>
+      </div>
+      <div class="desc">Modifie le nombre de réplicas d'un Deployment : Kubernetes crée ou supprime des Pods pour atteindre ce nombre. Exemple : <code>kubectl scale deployment mon-service --replicas=5</code>.</div>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;"><strong>Avantages</strong> : plus rapide pour déployer de petits projets, sans fichiers YAML à écrire ; plus rapide pour faire des modifications ; idéal pour apprendre et expérimenter.<br>
+<strong>Inconvénients</strong> : il faut retenir des commandes différentes pour chaque type d'objet ; pas de gestion de versions, donc difficile de suivre les changements ; et surtout, <strong>difficile de reproduire la même configuration</strong> (sur un autre cluster ou après une réinstallation), puisque l'état final dépend de la suite de commandes tapées.</p>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Approche déclarative</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">On <strong>décrit l'état voulu</strong> dans des fichiers de configuration (YAML ou JSON), puis on les applique avec <code>kubectl apply</code> : c'est Kubernetes qui calcule et effectue les changements nécessaires pour atteindre cet état.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="pipe"># mon-service-pod.yaml</span><br><span class="flag">apiVersion:</span> <span class="value">v1</span><br><span class="flag">kind:</span> <span class="sub">Pod</span><br><span class="flag">metadata:</span><br>  <span class="flag">name:</span> <span class="value">mon-service-pod</span><br>  <span class="flag">labels:</span><br>    <span class="flag">app:</span> <span class="value">mon-service</span><br>    <span class="flag">version:</span> <span class="value">"2.0.1"</span><br><span class="flag">spec:</span><br>  <span class="flag">containers:</span><br>    <span class="pipe">-</span> <span class="flag">name:</span> <span class="value">mon-service</span><br>      <span class="flag">image:</span> <span class="value">mon-service:2.0.1</span><br>      <span class="flag">ports:</span><br>        <span class="pipe">-</span> <span class="flag">containerPort:</span> <span class="value">8080</span><br>      <span class="flag">env:</span><br>        <span class="pipe">-</span> <span class="flag">name:</span> <span class="value">SPRING_PROFILES_ACTIVE</span><br>          <span class="flag">value:</span> <span class="value">"default"</span></code>
+      </div>
+      <div class="desc">Exemple de manifeste décrivant un <strong>Pod</strong>. Après <code>apiVersion</code> (<code>v1</code> pour un Pod), <code>kind</code> et <code>metadata</code>, la section <code>spec</code> décrit le contenu voulu : la liste <code>containers</code> (ici un seul conteneur), avec pour chacun son <code>name</code>, son <code>image</code>, ses <code>ports</code> (<code>containerPort</code> : le port sur lequel l'application écoute dans le conteneur) et ses variables d'environnement <code>env</code>, sous forme de paires <code>name</code> / <code>value</code>.
+        <span class="note">Conseil : les valeurs qui ressemblent à des nombres mais doivent rester du texte (versions, profils…) s'écrivent entre guillemets, ex. <code>version: "2.0.1"</code>. En pratique, on décrit rarement un Pod seul : on écrit un Deployment, dont la partie <code>template</code> contient exactement ce même bloc de Pod.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">apply</span> <span class="flag">-f</span> <span class="value">&lt;fichier.yaml&gt;</span></code>
+      </div>
+      <div class="desc">Applique un manifeste : Kubernetes compare l'état décrit dans le fichier à l'état actuel du cluster, puis <strong>crée</strong> les objets qui n'existent pas encore ou <strong>met à jour</strong> ceux qui ont changé. La même commande sert donc à la création comme aux modifications : on modifie le fichier, puis on relance <code>apply</code>.
+        <span class="note">Conseil : <code>-f</code> accepte aussi un dossier entier (<code>kubectl apply -f k8s/</code>), pratique pour appliquer tous les manifestes d'une application en une fois.</span>
+      </div>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;"><strong>Avantages</strong> : adaptée à la <strong>production</strong> ; les fichiers se placent sous <strong>gestion de versions</strong> (Git) avec le code, ce qui permet de suivre et de relire chaque changement ; idéale pour le <strong>travail en équipe</strong>, chacun appliquant les mêmes fichiers.<br>
+<strong>Inconvénients</strong> : plus long à mettre en place ; les fichiers peuvent devenir <strong>obsolètes</strong> ; il faut garder les fichiers et le cluster <strong>synchronisés</strong> (une modification faite en impératif sur le cluster ne se reflète pas dans les fichiers, et sera écrasée au prochain <code>apply</code>).</p>
   </section>
 
   <footer>Aide-mémoire personnel — à garder sous la main</footer>
