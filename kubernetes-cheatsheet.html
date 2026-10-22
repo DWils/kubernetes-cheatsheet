@@ -339,7 +339,7 @@ Juste après la création, <code>READY</code> peut afficher <code>0/3</code> le 
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">kubectl</span> <span class="sub">describe</span> <span class="sub">deployment</span> <span class="value">&lt;deployment&gt;</span></code>
       </div>
-      <div class="desc">Affiche le <strong>détail complet</strong> d'un Deployment, sous une forme lisible : labels et sélecteur, nombre de réplicas (voulus, à jour, disponibles), stratégie de mise à jour, modèle de Pod (image, ports, variables d'environnement) et, en bas, les <strong>événements</strong> récents (ex. création ou mise à l'échelle des réplicas). Exemple : <code>kubectl describe deployment mon-service-deployment</code>.
+      <div class="desc">Affiche le <strong>détail complet</strong> d'un Deployment, sous une forme lisible : labels et sélecteur, nombre de réplicas (voulus, à jour, disponibles), stratégie de mise à jour, modèle de Pod (image, ports, variables d'environnement) et, en bas, les <strong>événements</strong> récents (ex. création ou mise à l'échelle des réplicas). Exemple : <code>kubectl describe deployment mon-service-deployment</code>. Les deux écritures fonctionnent : <code>deployment mon-service-deployment</code> (avec une espace) ou <code>deployment/mon-service-deployment</code> (avec une barre oblique) ; c'est vrai pour la plupart des commandes <code>kubectl</code> (<code>get</code>, <code>describe</code>, <code>delete</code>, <code>set image</code>…).
         <span class="note">Conseil : <code>describe</code> fonctionne sur tous les objets (<code>kubectl describe pod &lt;pod&gt;</code>, <code>kubectl describe service &lt;service&gt;</code>…). C'est le premier réflexe quand quelque chose ne marche pas : la section <em>Events</em> indique souvent directement la cause (image introuvable, ressources insuffisantes…).</span>
       </div>
     </div>
@@ -546,7 +546,37 @@ On peut aussi choisir la <strong>version de Kubernetes</strong>. Changer le nomb
         <code><span class="docker">kubectl</span> <span class="sub">rollout</span> <span class="sub">history</span> <span class="value">deployment/&lt;deployment&gt;</span></code>
       </div>
       <div class="desc">Affiche l'<strong>historique des révisions</strong> d'un Deployment : chaque changement du modèle de Pod (ex. nouvelle image avec <code>set image</code>) crée une nouvelle révision numérotée (<code>1</code> = création, <code>2</code> = première mise à jour…). Ce sont ces révisions qui permettent de revenir en arrière.
-        <span class="note">Conseil : la colonne <code>CHANGE-CAUSE</code> affiche <code>&lt;none&gt;</code> par défaut. Pour y décrire chaque changement, ajoute une annotation juste après la modification : <code>kubectl annotate deployment/&lt;deployment&gt; kubernetes.io/change-cause="passage en 1.0.1"</code>. <code>kubectl rollout history deployment/&lt;deployment&gt; --revision=2</code> affiche le détail d'une révision (image, ports…).</span>
+        <span class="note">Conseil : la colonne <code>CHANGE-CAUSE</code> affiche <code>&lt;none&gt;</code> par défaut ; pour la remplir, voir <code>kubectl annotate</code> ci-dessous. <code>kubectl rollout history deployment/&lt;deployment&gt; --revision=2</code> affiche le détail d'une révision (image, ports…).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">annotate</span> <span class="value">deployment/mon-service-deployment</span> <span class="pipe">\</span><br>  <span class="flag">kubernetes.io/change-cause</span><span class="value">="Mise à jour de l'image vers mon-compte/mon-service:1.0.1"</span></code>
+      </div>
+      <div class="desc">Ajoute une <strong>annotation</strong> au Deployment : une paire clé-valeur d'information, qui (contrairement aux labels) ne sert pas à sélectionner des objets. L'annotation <code>kubernetes.io/change-cause</code> est particulière : sa valeur s'affiche dans la colonne <code>CHANGE-CAUSE</code> de <code>kubectl rollout history</code>, en face de la <strong>révision la plus récente</strong>. Ici, <code>kubectl rollout history</code> affiche ensuite <code>2&nbsp;&nbsp;Mise à jour de l'image vers mon-compte/mon-service:1.0.1</code>, la révision <code>1</code> restant à <code>&lt;none&gt;</code>. Kubernetes confirme par <code>deployment.apps/&lt;deployment&gt; annotated</code>.
+        <span class="note">Conseil : l'annotation décrit la dernière révision ; lance-la donc juste après chaque <code>set image</code>, avant le changement suivant. Pour modifier une annotation existante, ajoute <code>--overwrite</code>. Attention : l'annotation reste sur le Deployment, donc une nouvelle révision (par exemple après un <code>set env</code>) <strong>reprend l'ancienne CHANGE-CAUSE</strong> : la révision <code>3</code> afficherait encore <code>Mise à jour de l'image vers mon-compte/mon-service:1.0.1</code>. Après chaque changement, mets donc à jour l'annotation, par exemple après le <code>set env</code> : <code>kubectl annotate deployment/mon-service-deployment kubernetes.io/change-cause="Variables d'environnement : SPRING_PROFILES_ACTIVE=test, LOG_LEVEL=DEBUG" --overwrite</code>. La révision <code>3</code> affiche alors ce texte.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">set</span> <span class="sub">env</span> <span class="value">deployment/&lt;deployment&gt;</span> <span class="value">&lt;VAR&gt;=&lt;valeur&gt;</span> <span class="value">&lt;VAR2&gt;=&lt;valeur2&gt;</span></code>
+      </div>
+      <div class="desc">Ajoute ou modifie des <strong>variables d'environnement</strong> dans les conteneurs d'un Deployment, sans reconstruire l'image. Exemple : <code>kubectl set env deployment/mon-service-deployment SPRING_PROFILES_ACTIVE=test LOG_LEVEL=DEBUG</code> active le profil Spring <code>test</code> et passe les logs en mode détaillé. Kubernetes confirme par <code>deployment.apps/&lt;deployment&gt; env updated</code>.
+        <span class="note">Conseil : changer une variable modifie le modèle de Pod, donc déclenche une <strong>mise à jour progressive</strong> (nouveaux Pods) et crée une nouvelle révision dans <code>rollout history</code>. <code>kubectl set env deployment/&lt;deployment&gt; --list</code> affiche les variables actuelles, et <code>&lt;VAR&gt;-</code> (avec un tiret final) supprime une variable. Pour vérifier, <code>kubectl describe deployment &lt;deployment&gt;</code> liste les variables dans la rubrique <code>Environment</code> du <code>Pod Template</code>. En bas de la sortie, <code>NewReplicaSet</code> indique le ReplicaSet actif (ex. 3/3 replicas) et <code>OldReplicaSets</code> les anciens, gardés à 0 replica : c'est ce qui permet un retour arrière avec <code>rollout undo</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">kubectl</span> <span class="sub">set</span> <span class="sub">env</span> <span class="value">pods</span> <span class="flag">--all</span> <span class="flag">--list</span></code>
+      </div>
+      <div class="desc">Affiche, <strong>sans rien modifier</strong>, les variables d'environnement de chaque Pod. La sortie commence pour chaque Pod par une ligne <code># Pod &lt;nom-du-pod&gt;, container &lt;conteneur&gt;</code>, suivie des variables au format <code>VAR=valeur</code>. <code>--all</code> cible tous les Pods du namespace, <code>--list</code> se contente de lister.
+        <span class="note">Conseil : pratique après un <code>set env</code> pour vérifier que les nouveaux Pods (nouveau suffixe de ReplicaSet dans leur nom) ont bien reçu les valeurs. Pour un seul Pod : <code>kubectl set env pod/&lt;nom-du-pod&gt; --list</code>.</span>
       </div>
     </div>
 
